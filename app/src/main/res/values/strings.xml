@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">MiTiempoSemanal</string>
+    <string name="student_signature">Angela Bastidas · v0.1.0 (1)</string>
+    <string name="my_tasks">MIS TAREAS</string>
+    <string name="add_task">Añadir Tarea</string>
+    <string name="add_category">Añadir categoría</string>
+    <string name="edit_task">EDITAR TAREA</string>
+    <string name="edit_category">EDITAR CATEGORÍA</string>
+    <string name="save">Guardar</string>
+    <string name="add">Añadir</string>
+    <string name="ingresar">Ingresar</string>
+    <string name="task_name_label">NOMBRE DE TAREA</string>
+    <string name="category_label">CATEGORIA</string>
+    <string name="category_name_label">NOMBRE DE CATEGORÍA</string>
+    <string name="categories_title">CATEGORÍAS:</string>
+    <string name="tasks_title">TAREAS:</string>
+</resources>

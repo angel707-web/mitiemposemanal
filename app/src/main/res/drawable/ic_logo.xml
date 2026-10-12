@@ -1,0 +1,17 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    <!-- Outer hexagon/ribbon emblem -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M50,8 L85,28 L85,68 L50,88 L15,68 L15,28 Z" />
+    <path
+        android:fillColor="#0D133E"
+        android:pathData="M50,18 L76,33 L76,63 L50,78 L24,63 L24,33 Z" />
+    <!-- Stylized S ribbon inside -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M35,32 L65,32 L65,42 L45,42 L45,48 L65,48 L65,68 L35,68 L35,58 L55,58 L55,52 L35,52 Z" />
+</vector>

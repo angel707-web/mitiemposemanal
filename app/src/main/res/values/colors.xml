@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    
+    <!-- Primary App Palette -->
+    <color name="splash_bg">#0D133E</color>
+    <color name="primary_color">#5865F2</color>
+    <color name="primary_dark">#181F54</color>
+    <color name="text_navy">#151C53</color>
+    <color name="text_gray">#7F85A3</color>
+    <color name="text_sub">#A0A5BA</color>
+    <color name="card_dark">#242634</color>
+    <color name="input_background">#E4E8F8</color>
+    <color name="input_stroke">#CCD3ED</color>
+    
+    <!-- Category Default Colors -->
+    <color name="cat_estudio">#6C5CE7</color>
+    <color name="cat_trabajo">#E84393</color>
+    <color name="cat_descanso">#FF7675</color>
+    <color name="cat_ocio">#00CEC9</color>
+</resources>
