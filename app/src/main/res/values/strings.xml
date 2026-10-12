@@ -1,7 +1,9 @@
 <resources>
     <string name="app_name">MiTiempoSemanal</string>
-    <string name="student_signature">Angela Bastidas · v0.1.0 (1)</string>
+    <string name="student_signature">Angela Bastidas · v0.2.0 (2)</string>
     <string name="my_tasks">MIS TAREAS</string>
+    <string name="events_title">EVENTOS</string>
+    <string name="events_button">Registrar Eventos</string>
     <string name="add_task">Añadir Tarea</string>
     <string name="add_category">Añadir categoría</string>
     <string name="edit_task">EDITAR TAREA</string>
@@ -14,4 +16,7 @@
     <string name="category_name_label">NOMBRE DE CATEGORÍA</string>
     <string name="categories_title">CATEGORÍAS:</string>
     <string name="tasks_title">TAREAS:</string>
+    <string name="btn_start_event">Iniciar</string>
+    <string name="btn_finish_event">Finalizar</string>
+    <string name="events_history_title">HISTORIAL DE EVENTOS:</string>
 </resources>

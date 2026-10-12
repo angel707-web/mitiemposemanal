@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="16dp"
+    android:layout_marginTop="6dp"
+    android:layout_marginEnd="16dp"
+    android:layout_marginBottom="6dp"
+    app:cardBackgroundColor="@color/card_dark"
+    app:cardCornerRadius="14dp"
+    app:cardElevation="2dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingEnd="12dp">
+
+        <!-- Category Colored Strip on Left -->
+        <View
+            android:id="@+id/viewCategoryColor"
+            android:layout_width="8dp"
+            android:layout_height="0dp"
+            android:background="@color/primary_color"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <!-- Event Details -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="12dp"
+            android:orientation="vertical"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/layoutDurationBadge"
+            app:layout_constraintStart_toEndOf="@id/viewCategoryColor"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <!-- Task Name -->
+            <TextView
+                android:id="@+id/tvEventTaskName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="APRENDER KOTLIN"
+                android:textAllCaps="true"
+                android:textColor="@color/white"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <!-- Category -->
+            <TextView
+                android:id="@+id/tvEventCategory"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="CATEGORÍA: ESTUDIO"
+                android:textAllCaps="true"
+                android:textColor="@color/text_sub"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <!-- Dates (Start and End) -->
+            <TextView
+                android:id="@+id/tvEventTimes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="Inicio: 2026-10-12 18:30\nFin: 2026-10-12 19:15"
+                android:textColor="#CBD0E8"
+                android:textSize="12sp" />
+
+        </LinearLayout>
+
+        <!-- Duration & Status Badge -->
+        <LinearLayout
+            android:id="@+id/layoutDurationBadge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="end|center_vertical"
+            android:orientation="vertical"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <TextView
+                android:id="@+id/tvEventDuration"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_button_primary"
+                android:paddingStart="10dp"
+                android:paddingTop="4dp"
+                android:paddingEnd="10dp"
+                android:paddingBottom="4dp"
+                android:text="00:45:00"
+                android:textColor="@color/white"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvEventStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Finalizado"
+                android:textColor="@color/text_sub"
+                android:textSize="11sp" />
+
+        </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.cardview.widget.CardView>

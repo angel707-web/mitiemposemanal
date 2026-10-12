@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/eventsRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    android:fitsSystemWindows="true">
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="20dp"
+            android:paddingTop="20dp"
+            android:paddingEnd="20dp"
+            android:paddingBottom="80dp">
+
+            <!-- Title -->
+            <TextView
+                android:id="@+id/tvEventsTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:letterSpacing="0.05"
+                android:text="@string/events_title"
+                android:textColor="@color/text_navy"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+
+            <!-- Active Event Panel (Timer Card) -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/cardActiveEvent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:cardBackgroundColor="@color/splash_bg"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="3dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                    <TextView
+                        android:id="@+id/tvActiveStatusBadge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="NINGÚN EVENTO EN CURSO"
+                        android:textColor="@color/text_sub"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <!-- Chronometer / Timer Display -->
+                    <TextView
+                        android:id="@+id/tvTimerDisplay"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="00:00:00"
+                        android:textColor="@color/white"
+                        android:textSize="38sp"
+                        android:textStyle="bold" />
+
+                    <!-- Active Task & Category Info -->
+                    <TextView
+                        android:id="@+id/tvActiveTaskDetails"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:gravity="center"
+                        android:text="Selecciona o escribe una tarea abajo"
+                        android:textColor="@color/text_sub"
+                        android:textSize="13sp" />
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Search / Input Task Section -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:text="TAREA"
+                android:textColor="@color/text_sub"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <!-- AutoCompleteTextView for search with suggestions -->
+            <AutoCompleteTextView
+                android:id="@+id/actvTaskSearch"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="6dp"
+                android:background="@drawable/bg_input"
+                android:completionThreshold="2"
+                android:hint="Buscar o escribir tarea..."
+                android:imeOptions="actionDone"
+                android:inputType="textCapSentences"
+                android:maxLines="1"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:textColor="@color/text_navy"
+                android:textColorHint="@color/text_gray"
+                android:textSize="15sp" />
+
+            <!-- Selected Task Category Info Badge -->
+            <LinearLayout
+                android:id="@+id/layoutSelectedTaskCategory"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Categoría: "
+                    android:textColor="@color/text_gray"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvSelectedCategoryName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_button_primary"
+                    android:paddingStart="8dp"
+                    android:paddingTop="2dp"
+                    android:paddingEnd="8dp"
+                    android:paddingBottom="2dp"
+                    android:text="Estudio"
+                    android:textColor="@color/white"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- Buttons: Iniciar y Finalizar -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:orientation="horizontal">
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/btnStartEvent"
+                    android:layout_width="0dp"
+                    android:layout_height="52dp"
+                    android:layout_marginEnd="8dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_button_primary"
+                    android:text="@string/btn_start_event"
+                    android:textAllCaps="false"
+                    android:textColor="@color/white"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/btnFinishEvent"
+                    android:layout_width="0dp"
+                    android:layout_height="52dp"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_button_secondary"
+                    android:text="@string/btn_finish_event"
+                    android:textAllCaps="false"
+                    android:textColor="@color/primary_color"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- Events History Section Header -->
+            <TextView
+                android:id="@+id/tvEventsListTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:layout_marginBottom="8dp"
+                android:text="@string/events_history_title"
+                android:textColor="@color/text_sub"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <!-- Empty State for Events -->
+            <TextView
+                android:id="@+id/tvEmptyEvents"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:gravity="center"
+                android:text="No hay eventos registrados aún."
+                android:textColor="@color/text_gray"
+                android:textSize="14sp"
+                android:visibility="gone" />
+
+            <!-- Events RecyclerView -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvEvents"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                tools:listitem="@layout/item_event" />
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- Bottom Right Circular Back Button -->
+    <ImageButton
+        android:id="@+id/btnBackEvents"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="24dp"
+        android:background="@drawable/bg_circle_button"
+        android:contentDescription="Regresar"
+        android:elevation="4dp"
+        android:padding="12dp"
+        android:src="@drawable/ic_arrow_back"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

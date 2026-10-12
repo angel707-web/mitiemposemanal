@@ -5,10 +5,12 @@ import android.os.Bundle
 import android.view.View
 import android.widget.Button
 import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.cardview.widget.CardView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -23,6 +25,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var taskAdapter: TaskAdapter
     private lateinit var rvTasks: RecyclerView
     private lateinit var layoutEmptyState: LinearLayout
+    private lateinit var cardActiveBanner: CardView
+    private lateinit var tvBannerActiveTask: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,10 +43,24 @@ class MainActivity : AppCompatActivity() {
 
         rvTasks = findViewById(R.id.rvTasks)
         layoutEmptyState = findViewById(R.id.layoutEmptyState)
+        cardActiveBanner = findViewById(R.id.cardActiveBanner)
+        tvBannerActiveTask = findViewById(R.id.tvBannerActiveTask)
+
+        val btnGoToEvents = findViewById<Button>(R.id.btnGoToEvents)
         val btnAddTask = findViewById<Button>(R.id.btnAddTask)
         val btnAddCategory = findViewById<Button>(R.id.btnAddCategory)
 
         setupRecyclerView()
+
+        btnGoToEvents.setOnClickListener {
+            val intent = Intent(this, EventsActivity::class.java)
+            startActivity(intent)
+        }
+
+        cardActiveBanner.setOnClickListener {
+            val intent = Intent(this, EventsActivity::class.java)
+            startActivity(intent)
+        }
 
         btnAddTask.setOnClickListener {
             val intent = Intent(this, TaskActivity::class.java)
@@ -58,6 +76,7 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         loadTasks()
+        checkActiveEventBanner()
     }
 
     private fun setupRecyclerView() {
@@ -93,6 +112,16 @@ class MainActivity : AppCompatActivity() {
         } else {
             rvTasks.visibility = View.VISIBLE
             layoutEmptyState.visibility = View.GONE
+        }
+    }
+
+    private fun checkActiveEventBanner() {
+        val activeEvent = dbHelper.getActiveEvent()
+        if (activeEvent != null) {
+            cardActiveBanner.visibility = View.VISIBLE
+            tvBannerActiveTask.text = "EVENTO EN CURSO: ${activeEvent.taskName.uppercase()}"
+        } else {
+            cardActiveBanner.visibility = View.GONE
         }
     }
 

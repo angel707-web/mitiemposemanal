@@ -41,6 +41,12 @@
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
 
+        <!-- Events Activity (Sprint 2) -->
+        <activity
+            android:name=".EventsActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
     </application>
 
 </manifest>
