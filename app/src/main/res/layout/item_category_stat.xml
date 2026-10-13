@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingTop="6dp"
+    android:paddingBottom="8dp">
+
+    <!-- Header Row: Category name, Hours, Percentage -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <!-- Bullet / Color Dot -->
+        <View
+            android:id="@+id/viewCategoryStatBullet"
+            android:layout_width="10dp"
+            android:layout_height="10dp"
+            android:background="@drawable/bg_circle_button" />
+
+        <!-- Category Name -->
+        <TextView
+            android:id="@+id/tvCategoryStatName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:text="Estudio"
+            android:textColor="@color/text_navy"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <!-- Accumulated Hours -->
+        <TextView
+            android:id="@+id/tvCategoryStatHours"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="12dp"
+            android:text="21.0 h"
+            android:textColor="@color/text_gray"
+            android:textSize="12sp" />
+
+        <!-- Percentage (e.g. 12.5 %) -->
+        <TextView
+            android:id="@+id/tvCategoryStatPercentage"
+            android:layout_width="52dp"
+            android:layout_height="wrap_content"
+            android:gravity="end"
+            android:text="12.5 %"
+            android:textColor="@color/text_navy"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+    </LinearLayout>
+
+    <!-- Progress Bar -->
+    <ProgressBar
+        android:id="@+id/pbCategoryStatProgress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="8dp"
+        android:layout_marginTop="5dp"
+        android:max="1000"
+        android:progress="125"
+        android:progressDrawable="@drawable/bg_progress_horizontal" />
+
+</LinearLayout>

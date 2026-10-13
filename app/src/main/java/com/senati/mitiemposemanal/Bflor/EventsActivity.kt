@@ -1,5 +1,6 @@
 package com.senati.mitiemposemanal.Bflor
 
+import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
@@ -11,6 +12,7 @@ import android.widget.AutoCompleteTextView
 import android.widget.Button
 import android.widget.ImageButton
 import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
@@ -25,12 +27,16 @@ import androidx.recyclerview.widget.RecyclerView
 import com.senati.mitiemposemanal.Bflor.adapter.EventAdapter
 import com.senati.mitiemposemanal.Bflor.adapter.TaskSearchAdapter
 import com.senati.mitiemposemanal.Bflor.db.DatabaseHelper
-import com.senati.mitiemposemanal.Bflor.model.Category
 import com.senati.mitiemposemanal.Bflor.model.Event
 import com.senati.mitiemposemanal.Bflor.model.Task
+import java.time.DayOfWeek
 import java.time.Duration
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.time.temporal.TemporalAdjusters
+import java.util.Locale
 
 class EventsActivity : AppCompatActivity() {
 
@@ -38,6 +44,11 @@ class EventsActivity : AppCompatActivity() {
     private lateinit var eventAdapter: EventAdapter
     private lateinit var searchAdapter: TaskSearchAdapter
 
+    // Sprint 3: Weekly Statistics Views
+    private lateinit var tvWeekRange: TextView
+    private lateinit var llCategoryStatsContainer: LinearLayout
+
+    // Timer & Status Views
     private lateinit var tvTimerDisplay: TextView
     private lateinit var tvActiveStatusBadge: TextView
     private lateinit var tvActiveTaskDetails: TextView
@@ -85,6 +96,7 @@ class EventsActivity : AppCompatActivity() {
         super.onResume()
         checkActiveEvent()
         loadEventsHistory()
+        loadWeeklyStats()
     }
 
     override fun onPause() {
@@ -93,6 +105,9 @@ class EventsActivity : AppCompatActivity() {
     }
 
     private fun initViews() {
+        tvWeekRange = findViewById(R.id.tvWeekRange)
+        llCategoryStatsContainer = findViewById(R.id.llCategoryStatsContainer)
+
         tvTimerDisplay = findViewById(R.id.tvTimerDisplay)
         tvActiveStatusBadge = findViewById(R.id.tvActiveStatusBadge)
         tvActiveTaskDetails = findViewById(R.id.tvActiveTaskDetails)
@@ -109,7 +124,7 @@ class EventsActivity : AppCompatActivity() {
         searchAdapter = TaskSearchAdapter(this, dbHelper)
         actvTaskSearch.setAdapter(searchAdapter)
 
-        // HU-03 Criterio de aceptación: Al elegir una tarea de la lista, se muestra su categoría
+        // HU-03: Al elegir una tarea de la lista, se muestra su categoría
         actvTaskSearch.setOnItemClickListener { parent, _, position, _ ->
             val task = parent.getItemAtPosition(position) as? Task
             if (task != null) {
@@ -122,7 +137,6 @@ class EventsActivity : AppCompatActivity() {
         actvTaskSearch.addTextChangedListener { text ->
             val input = text?.toString()?.trim() ?: ""
             if (selectedTask != null && !selectedTask!!.name.equals(input, ignoreCase = true)) {
-                // If user changed text away from selected task
                 val match = dbHelper.getTaskByName(input)
                 if (match != null) {
                     selectedTask = match
@@ -178,12 +192,105 @@ class EventsActivity : AppCompatActivity() {
         }
     }
 
-    // HU-05 Criterio de aceptación: Solo puede haber un evento en curso a la vez;
-    // Si cierro la app con un evento en curso, al volver a abrirla sigue en curso.
+    // ================= SPRINT 3: PANEL DINÁMICO DE ESTADÍSTICAS SEMANALES =================
+
+    /**
+     * HU-06: Ver el porcentaje semanal por categoría
+     * - Rango de semana de lunes 00:00 a domingo 23:59.
+     * - Consulta SQL que agrupa los eventos con SUM y GROUP BY.
+     * - Dinámico: contenedor vacío en XML llenado desde Kotlin.
+     * - Porcentaje sobre 168 horas (604,800 s = 10,080 min).
+     * - Fila "Sin registrar" con las horas restantes.
+     * - Porcentajes mostrados con un decimal (ej. 12.5 %).
+     */
+    private fun loadWeeklyStats() {
+        llCategoryStatsContainer.removeAllViews()
+
+        val today = LocalDate.now()
+        val monday = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+        val sunday = today.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY))
+
+        val dateDisplayFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+        tvWeekRange.text = "Semana ${monday.format(dateDisplayFormatter)} – ${sunday.format(dateDisplayFormatter)}"
+
+        val weekStartStr = monday.atStartOfDay().format(dateTimeFormatter)
+        val weekEndStr = sunday.atTime(LocalTime.MAX).format(dateTimeFormatter)
+
+        // Totales calculados en SQLite con SUM y GROUP BY
+        val categoryStats = dbHelper.getWeeklyCategoryStats(weekStartStr, weekEndStr)
+
+        var totalRegisteredSeconds = 0L
+
+        for (stat in categoryStats) {
+            totalRegisteredSeconds += stat.totalSeconds
+
+            val rowView = layoutInflater.inflate(R.layout.item_category_stat, llCategoryStatsContainer, false)
+
+            val bullet: View = rowView.findViewById(R.id.viewCategoryStatBullet)
+            val tvName: TextView = rowView.findViewById(R.id.tvCategoryStatName)
+            val tvHours: TextView = rowView.findViewById(R.id.tvCategoryStatHours)
+            val tvPercent: TextView = rowView.findViewById(R.id.tvCategoryStatPercentage)
+            val pbProgress: ProgressBar = rowView.findViewById(R.id.pbCategoryStatProgress)
+
+            tvName.text = stat.categoryName
+            tvHours.text = stat.getFormattedHours()
+            tvPercent.text = stat.getFormattedPercentage()
+
+            // 1000 unidades de progreso para precisión de 0.1%
+            val progressVal = (stat.percentage * 10).toInt().coerceIn(0, 1000)
+            pbProgress.progress = progressVal
+
+            try {
+                val color = Color.parseColor(stat.categoryColorHex)
+                val dot = GradientDrawable().apply {
+                    shape = GradientDrawable.OVAL
+                    setColor(color)
+                }
+                bullet.background = dot
+                pbProgress.progressTintList = ColorStateList.valueOf(color)
+            } catch (e: Exception) {
+                // fallback
+            }
+
+            llCategoryStatsContainer.addView(rowView)
+        }
+
+        // Fila adicional "Sin registrar"
+        val weekTotalSeconds = 168L * 3600L // 604,800 segundos en 168 horas
+        val unregisteredSeconds = (weekTotalSeconds - totalRegisteredSeconds).coerceAtLeast(0L)
+        val unregisteredHours = unregisteredSeconds / 3600.0
+        val unregisteredPercentage = (unregisteredSeconds.toDouble() / weekTotalSeconds.toDouble()) * 100.0
+
+        val unregRowView = layoutInflater.inflate(R.layout.item_category_stat, llCategoryStatsContainer, false)
+        val unregBullet: View = unregRowView.findViewById(R.id.viewCategoryStatBullet)
+        val unregName: TextView = unregRowView.findViewById(R.id.tvCategoryStatName)
+        val unregHours: TextView = unregRowView.findViewById(R.id.tvCategoryStatHours)
+        val unregPercent: TextView = unregRowView.findViewById(R.id.tvCategoryStatPercentage)
+        val unregProgress: ProgressBar = unregRowView.findViewById(R.id.pbCategoryStatProgress)
+
+        unregName.text = getString(R.string.unregistered_time_label)
+        unregHours.text = String.format(Locale.US, "%.1f h", unregisteredHours)
+        unregPercent.text = String.format(Locale.US, "%.1f %%", unregisteredPercentage)
+
+        val unregProgressVal = (unregisteredPercentage * 10).toInt().coerceIn(0, 1000)
+        unregProgress.progress = unregProgressVal
+
+        val grayColor = Color.parseColor("#A0A5BA")
+        val unregDot = GradientDrawable().apply {
+            shape = GradientDrawable.OVAL
+            setColor(grayColor)
+        }
+        unregBullet.background = unregDot
+        unregProgress.progressTintList = ColorStateList.valueOf(grayColor)
+
+        llCategoryStatsContainer.addView(unregRowView)
+    }
+
+    // ================= EVENT CONTROL & FLOW =================
+
     private fun checkActiveEvent() {
         activeEvent = dbHelper.getActiveEvent()
         if (activeEvent != null) {
-            // Event is in progress
             btnStartEvent.isEnabled = false
             btnStartEvent.alpha = 0.5f
             btnFinishEvent.isEnabled = true
@@ -200,7 +307,6 @@ class EventsActivity : AppCompatActivity() {
             timerHandler.removeCallbacks(timerRunnable)
             timerHandler.post(timerRunnable)
         } else {
-            // No event in progress
             btnStartEvent.isEnabled = true
             btnStartEvent.alpha = 1.0f
             btnFinishEvent.isEnabled = false
@@ -241,18 +347,14 @@ class EventsActivity : AppCompatActivity() {
             return
         }
 
-        // Check if task exists in database
         val existingTask = dbHelper.getTaskByName(taskName)
         if (existingTask != null) {
-            // Task exists -> start event immediately
             startNewEvent(existingTask)
         } else {
-            // HU-04 Criterio de aceptación: Si el nombre escrito no existe y pulso Iniciar, la app me pide elegir una categoría.
             showCreateTaskDialog(taskName)
         }
     }
 
-    // HU-04: Crear la tarea si no existe
     private fun showCreateTaskDialog(taskName: String) {
         val categories = dbHelper.getAllCategories()
         if (categories.isEmpty()) {
@@ -286,7 +388,6 @@ class EventsActivity : AppCompatActivity() {
                 val selectedCategoryIndex = spinner.selectedItemPosition
                 val chosenCategory = categories[selectedCategoryIndex]
 
-                // Guardar la tarea con su categoría (aparece en la pantalla de Tareas del Sprint 1)
                 val newTask = Task(
                     name = taskName,
                     categoryId = chosenCategory.id,
@@ -311,7 +412,6 @@ class EventsActivity : AppCompatActivity() {
     }
 
     private fun startNewEvent(task: Task) {
-        // HU-05 Criterio de aceptación: Al pulsar Iniciar se guarda la fecha y hora actual del celular como inicio del evento
         val now = LocalDateTime.now()
         val startTimeStr = now.format(dateTimeFormatter)
 
@@ -325,7 +425,7 @@ class EventsActivity : AppCompatActivity() {
         }
     }
 
-    // HU-05 Criterio de aceptación: Al pulsar Finalizar se guarda la fecha y hora de fin y la duración del evento
+    // HU-06 Criterio de aceptación: Al pulsar Finalizar, el panel se actualiza en ese momento, sin salir de la pantalla.
     private fun handleFinishEvent() {
         val current = activeEvent ?: return
 
@@ -346,6 +446,8 @@ class EventsActivity : AppCompatActivity() {
             activeEvent = null
             checkActiveEvent()
             loadEventsHistory()
+            // Se actualiza el panel de estadísticas en ese momento
+            loadWeeklyStats()
         } else {
             Toast.makeText(this, "Error al finalizar el evento", Toast.LENGTH_SHORT).show()
         }

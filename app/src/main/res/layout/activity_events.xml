@@ -38,6 +38,59 @@
                 android:textSize="24sp"
                 android:textStyle="bold" />
 
+            <!-- SPRINT 3: Weekly Category Percentage Panel (HU-06) -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/cardWeeklyStats"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:cardBackgroundColor="#F8F9FE"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <!-- Week Range: "Semana 12/10/2026 – 18/10/2026" -->
+                    <TextView
+                        android:id="@+id/tvWeekRange"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:text="Semana 12/10/2026 – 18/10/2026"
+                        android:textColor="@color/text_navy"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:gravity="center"
+                        android:text="Base de cálculo: 168 horas semanales"
+                        android:textColor="@color/text_gray"
+                        android:textSize="11sp" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginTop="10dp"
+                        android:layout_marginBottom="6dp"
+                        android:background="@color/input_stroke" />
+
+                    <!-- Dynamic container: un contenedor vacío en el XML que se llena desde Kotlin -->
+                    <LinearLayout
+                        android:id="@+id/llCategoryStatsContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical" />
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
             <!-- Active Event Panel (Timer Card) -->
             <androidx.cardview.widget.CardView
                 android:id="@+id/cardActiveEvent"

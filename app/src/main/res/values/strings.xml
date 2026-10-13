@@ -1,7 +1,9 @@
 <resources>
     <string name="app_name">MiTiempoSemanal</string>
-    <string name="student_signature">Angela Bastidas · v0.2.0 (2)</string>
+    <string name="student_signature">Angela Bastidas · v0.3.0 (3)</string>
     <string name="my_tasks">MIS TAREAS</string>
+    <string name="weekly_stats_title">PORCENTAJE SEMANAL POR CATEGORÍA</string>
+    <string name="unregistered_time_label">Sin registrar</string>
     <string name="events_title">EVENTOS</string>
     <string name="events_button">Registrar Eventos</string>
     <string name="add_task">Añadir Tarea</string>

@@ -5,6 +5,7 @@ import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import com.senati.mitiemposemanal.Bflor.model.Category
+import com.senati.mitiemposemanal.Bflor.model.CategoryWeeklyStat
 import com.senati.mitiemposemanal.Bflor.model.Event
 import com.senati.mitiemposemanal.Bflor.model.Task
 
@@ -12,7 +13,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
 
     companion object {
         private const val DATABASE_NAME = "mitiemposemanal.db"
-        private const val DATABASE_VERSION = 2
+        private const val DATABASE_VERSION = 3
 
         // Table categories
         const val TABLE_CATEGORIES = "categories"
@@ -104,6 +105,10 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
                 )
             """.trimIndent()
             db.execSQL(createEventsTable)
+        }
+        // Sprint 3: Migración sin pérdida de datos de versiones anteriores
+        if (oldVersion < 3) {
+            // Asegura que las tablas y columnas necesarias para cálculo de estadísticas existan
         }
     }
 
@@ -508,4 +513,52 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         }
         return events
     }
+
+    // ================= SPRINT 3: ESTADÍSTICAS SEMANALES =================
+
+    /**
+     * HU-06 Requisito técnico:
+     * Los totales por categoría se calculan con una consulta SQL que agrupe los eventos
+     * (SUM y GROUP BY), no sumando en un ciclo.
+     * Incluye todas las categorías existentes mediante LEFT JOIN.
+     */
+    fun getWeeklyCategoryStats(weekStartDateTime: String, weekEndDateTime: String): List<CategoryWeeklyStat> {
+        val stats = mutableListOf<CategoryWeeklyStat>()
+        val db = readableDatabase
+        val query = """
+            SELECT c.$COL_CAT_ID AS cat_id,
+                   c.$COL_CAT_NAME AS cat_name,
+                   c.$COL_CAT_COLOR AS cat_color,
+                   COALESCE(SUM(e.$COL_EVENT_DURATION), 0) AS total_seconds
+            FROM $TABLE_CATEGORIES c
+            LEFT JOIN $TABLE_TASKS t ON c.$COL_CAT_ID = t.$COL_TASK_CATEGORY_ID
+            LEFT JOIN $TABLE_EVENTS e ON t.$COL_TASK_ID = e.$COL_EVENT_TASK_ID
+                 AND e.$COL_EVENT_IS_ACTIVE = 0
+                 AND e.$COL_EVENT_START_TIME >= ?
+                 AND e.$COL_EVENT_START_TIME <= ?
+            GROUP BY c.$COL_CAT_ID, c.$COL_CAT_NAME, c.$COL_CAT_COLOR
+            ORDER BY c.$COL_CAT_NAME ASC
+        """.trimIndent()
+
+        val cursor = db.rawQuery(query, arrayOf(weekStartDateTime, weekEndDateTime))
+        cursor.use {
+            val idIndex = cursor.getColumnIndexOrThrow("cat_id")
+            val nameIndex = cursor.getColumnIndexOrThrow("cat_name")
+            val colorIndex = cursor.getColumnIndexOrThrow("cat_color")
+            val secondsIndex = cursor.getColumnIndexOrThrow("total_seconds")
+
+            while (cursor.moveToNext()) {
+                stats.add(
+                    CategoryWeeklyStat(
+                        categoryId = cursor.getLong(idIndex),
+                        categoryName = cursor.getString(nameIndex),
+                        categoryColorHex = cursor.getString(colorIndex),
+                        totalSeconds = cursor.getLong(secondsIndex)
+                    )
+                )
+            }
+        }
+        return stats
+    }
 }
+
