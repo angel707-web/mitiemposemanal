@@ -183,6 +183,19 @@
             android:textSize="16sp"
             android:textStyle="bold" />
 
+        <!-- Button: Reportes Semanales (Sprint 4) -->
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnGoToReports"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/bg_button_secondary"
+            android:text="@string/reports_button"
+            android:textAllCaps="false"
+            android:textColor="@color/primary_color"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
         <!-- Row: Añadir Tarea & Añadir Categoría -->
         <LinearLayout
             android:layout_width="match_parent"

@@ -47,6 +47,12 @@
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
 
+        <!-- Reports Activity (Sprint 4) -->
+        <activity
+            android:name=".ReportsActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
     </application>
 
 </manifest>

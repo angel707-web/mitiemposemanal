@@ -47,6 +47,7 @@ class MainActivity : AppCompatActivity() {
         tvBannerActiveTask = findViewById(R.id.tvBannerActiveTask)
 
         val btnGoToEvents = findViewById<Button>(R.id.btnGoToEvents)
+        val btnGoToReports = findViewById<Button>(R.id.btnGoToReports)
         val btnAddTask = findViewById<Button>(R.id.btnAddTask)
         val btnAddCategory = findViewById<Button>(R.id.btnAddCategory)
 
@@ -54,6 +55,11 @@ class MainActivity : AppCompatActivity() {
 
         btnGoToEvents.setOnClickListener {
             val intent = Intent(this, EventsActivity::class.java)
+            startActivity(intent)
+        }
+
+        btnGoToReports.setOnClickListener {
+            val intent = Intent(this, ReportsActivity::class.java)
             startActivity(intent)
         }
 
@@ -75,6 +81,14 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        // HU-07: Al abrir la app, si hay semanas terminadas sin reporte, la app guarda el reporte automáticamente
+        try {
+            val currentMonday = java.time.LocalDate.now().with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY))
+            dbHelper.closePastWeeksAutomatically(currentMonday)
+        } catch (e: Exception) {
+            // fallback
+        }
+
         loadTasks()
         checkActiveEventBanner()
     }

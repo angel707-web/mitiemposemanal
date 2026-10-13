@@ -8,12 +8,17 @@ import com.senati.mitiemposemanal.Bflor.model.Category
 import com.senati.mitiemposemanal.Bflor.model.CategoryWeeklyStat
 import com.senati.mitiemposemanal.Bflor.model.Event
 import com.senati.mitiemposemanal.Bflor.model.Task
+import com.senati.mitiemposemanal.Bflor.model.WeeklyReportItem
+import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.temporal.TemporalAdjusters
 
 class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
 
     companion object {
         private const val DATABASE_NAME = "mitiemposemanal.db"
-        private const val DATABASE_VERSION = 3
+        private const val DATABASE_VERSION = 4
 
         // Table categories
         const val TABLE_CATEGORIES = "categories"
@@ -36,6 +41,17 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         const val COL_EVENT_END_TIME = "end_time"
         const val COL_EVENT_DURATION = "duration_seconds"
         const val COL_EVENT_IS_ACTIVE = "is_active"
+
+        // Table weekly_reports (Sprint 4)
+        const val TABLE_WEEKLY_REPORTS = "weekly_reports"
+        const val COL_REPORT_ID = "id"
+        const val COL_REPORT_WEEK_START = "week_start"
+        const val COL_REPORT_WEEK_END = "week_end"
+        const val COL_REPORT_CATEGORY_ID = "category_id"
+        const val COL_REPORT_TOTAL_SECONDS = "total_seconds"
+        const val COL_REPORT_HOURS = "hours"
+        const val COL_REPORT_PERCENTAGE = "percentage"
+        const val COL_REPORT_CREATED_AT = "created_at"
     }
 
     override fun onCreate(db: SQLiteDatabase) {
@@ -69,9 +85,25 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
             )
         """.trimIndent()
 
+        val createWeeklyReportsTable = """
+            CREATE TABLE $TABLE_WEEKLY_REPORTS (
+                $COL_REPORT_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                $COL_REPORT_WEEK_START TEXT NOT NULL,
+                $COL_REPORT_WEEK_END TEXT NOT NULL,
+                $COL_REPORT_CATEGORY_ID INTEGER NOT NULL,
+                $COL_REPORT_TOTAL_SECONDS INTEGER NOT NULL DEFAULT 0,
+                $COL_REPORT_HOURS REAL NOT NULL DEFAULT 0.0,
+                $COL_REPORT_PERCENTAGE REAL NOT NULL DEFAULT 0.0,
+                $COL_REPORT_CREATED_AT TEXT NOT NULL,
+                FOREIGN KEY ($COL_REPORT_CATEGORY_ID) REFERENCES $TABLE_CATEGORIES($COL_CAT_ID),
+                UNIQUE($COL_REPORT_WEEK_START, $COL_REPORT_CATEGORY_ID)
+            )
+        """.trimIndent()
+
         db.execSQL(createCategoriesTable)
         db.execSQL(createTasksTable)
         db.execSQL(createEventsTable)
+        db.execSQL(createWeeklyReportsTable)
 
         // Seed default 4 categories (HU-01: Criterio de aceptación 1)
         val defaultCategories = listOf(
@@ -108,7 +140,25 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         }
         // Sprint 3: Migración sin pérdida de datos de versiones anteriores
         if (oldVersion < 3) {
-            // Asegura que las tablas y columnas necesarias para cálculo de estadísticas existan
+            // Tablas e índices de Sprint 3
+        }
+        // Sprint 4: Crear tabla de reportes semanales sin perder datos previos
+        if (oldVersion < 4) {
+            val createWeeklyReportsTable = """
+                CREATE TABLE IF NOT EXISTS $TABLE_WEEKLY_REPORTS (
+                    $COL_REPORT_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                    $COL_REPORT_WEEK_START TEXT NOT NULL,
+                    $COL_REPORT_WEEK_END TEXT NOT NULL,
+                    $COL_REPORT_CATEGORY_ID INTEGER NOT NULL,
+                    $COL_REPORT_TOTAL_SECONDS INTEGER NOT NULL DEFAULT 0,
+                    $COL_REPORT_HOURS REAL NOT NULL DEFAULT 0.0,
+                    $COL_REPORT_PERCENTAGE REAL NOT NULL DEFAULT 0.0,
+                    $COL_REPORT_CREATED_AT TEXT NOT NULL,
+                    FOREIGN KEY ($COL_REPORT_CATEGORY_ID) REFERENCES $TABLE_CATEGORIES($COL_CAT_ID),
+                    UNIQUE($COL_REPORT_WEEK_START, $COL_REPORT_CATEGORY_ID)
+                )
+            """.trimIndent()
+            db.execSQL(createWeeklyReportsTable)
         }
     }
 
@@ -560,5 +610,245 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         }
         return stats
     }
+
+    // ================= SPRINT 4: CIERRE SEMANAL Y REPORTES =================
+
+    /**
+     * HU-07: Comprobar si ya existe un reporte guardado para un rango de fechas.
+     * "Un reporte ya guardado no se vuelve a generar ni se duplica."
+     */
+    fun hasWeeklyReport(weekStart: String): Boolean {
+        val db = readableDatabase
+        val cursor = db.rawQuery(
+            "SELECT COUNT(*) FROM $TABLE_WEEKLY_REPORTS WHERE $COL_REPORT_WEEK_START = ?",
+            arrayOf(weekStart)
+        )
+        return cursor.use {
+            if (it.moveToFirst()) it.getInt(0) > 0 else false
+        }
+    }
+
+    /**
+     * HU-07: Guardar fila de reporte semanal.
+     */
+    fun insertWeeklyReportRow(
+        weekStart: String,
+        weekEnd: String,
+        categoryId: Long,
+        totalSeconds: Long,
+        hours: Double,
+        percentage: Double,
+        createdAt: String
+    ): Long {
+        val db = writableDatabase
+        val values = ContentValues().apply {
+            put(COL_REPORT_WEEK_START, weekStart)
+            put(COL_REPORT_WEEK_END, weekEnd)
+            put(COL_REPORT_CATEGORY_ID, categoryId)
+            put(COL_REPORT_TOTAL_SECONDS, totalSeconds)
+            put(COL_REPORT_HOURS, hours)
+            put(COL_REPORT_PERCENTAGE, percentage)
+            put(COL_REPORT_CREATED_AT, createdAt)
+        }
+        return db.insertWithOnConflict(TABLE_WEEKLY_REPORTS, null, values, SQLiteDatabase.CONFLICT_IGNORE)
+    }
+
+    /**
+     * HU-07 Criterio de aceptación:
+     * Al abrir la app, si hay semanas terminadas sin reporte, la app guarda el reporte de cada una.
+     * Si el usuario no abrió la app durante varias semanas, se generan los reportes de todas las semanas pendientes.
+     * Los eventos de semanas terminadas no se borran.
+     */
+    fun closePastWeeksAutomatically(currentMondayDate: LocalDate) {
+        val db = readableDatabase
+        val datePattern = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+        val currentMondayStr = currentMondayDate.format(datePattern) + " 00:00:00"
+
+        // Buscar fechas de inicio de todos los eventos finalizados de semanas pasadas
+        val query = """
+            SELECT DISTINCT SUBSTR($COL_EVENT_START_TIME, 1, 10) AS event_date
+            FROM $TABLE_EVENTS
+            WHERE $COL_EVENT_IS_ACTIVE = 0 AND $COL_EVENT_START_TIME < ?
+            ORDER BY event_date ASC
+        """.trimIndent()
+
+        val pastEventDates = mutableListOf<String>()
+        val cursor = db.rawQuery(query, arrayOf(currentMondayStr))
+        cursor.use {
+            val dateIndex = it.getColumnIndexOrThrow("event_date")
+            while (it.moveToNext()) {
+                pastEventDates.add(it.getString(dateIndex))
+            }
+        }
+
+        // Determinar semanas únicas a cerrar
+        val pastWeeksToClose = mutableSetOf<Pair<LocalDate, LocalDate>>()
+        for (dateStr in pastEventDates) {
+            try {
+                val date = LocalDate.parse(dateStr, datePattern)
+                val monday = date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+                val sunday = date.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY))
+
+                // Solo semanas que ya terminaron (su domingo es anterior al lunes actual)
+                if (monday.isBefore(currentMondayDate)) {
+                    pastWeeksToClose.add(Pair(monday, sunday))
+                }
+            } catch (e: Exception) {
+                // ignorar fechas inválidas
+            }
+        }
+
+        val nowStr = LocalDate.now().format(datePattern)
+        val fullDateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+
+        for ((monday, sunday) in pastWeeksToClose) {
+            val weekStart = monday.format(datePattern)
+            val weekEnd = sunday.format(datePattern)
+
+            // Si todavía no tiene reporte generado
+            if (!hasWeeklyReport(weekStart)) {
+                val weekStartDateTime = monday.atStartOfDay().format(fullDateTimeFormatter)
+                val weekEndDateTime = sunday.atTime(23, 59, 59).format(fullDateTimeFormatter)
+
+                val stats = getWeeklyCategoryStats(weekStartDateTime, weekEndDateTime)
+                for (stat in stats) {
+                    insertWeeklyReportRow(
+                        weekStart = weekStart,
+                        weekEnd = weekEnd,
+                        categoryId = stat.categoryId,
+                        totalSeconds = stat.totalSeconds,
+                        hours = stat.totalHours,
+                        percentage = stat.percentage,
+                        createdAt = nowStr
+                    )
+                }
+            }
+        }
+    }
+
+    /**
+     * HU-08 Criterio de aceptación:
+     * El Spinner se llena con una consulta a la tabla de reportes, no con fechas escritas en el código.
+     * Retorna pares (weekStart, weekEnd) de la más reciente a la más antigua.
+     */
+    fun getDistinctReportWeeks(): List<Pair<String, String>> {
+        val weeks = mutableListOf<Pair<String, String>>()
+        val db = readableDatabase
+        val query = """
+            SELECT DISTINCT $COL_REPORT_WEEK_START, $COL_REPORT_WEEK_END
+            FROM $TABLE_WEEKLY_REPORTS
+            ORDER BY $COL_REPORT_WEEK_START DESC
+        """.trimIndent()
+
+        val cursor = db.rawQuery(query, null)
+        cursor.use {
+            val startIndex = it.getColumnIndexOrThrow(COL_REPORT_WEEK_START)
+            val endIndex = it.getColumnIndexOrThrow(COL_REPORT_WEEK_END)
+            while (it.moveToNext()) {
+                weeks.add(Pair(it.getString(startIndex), it.getString(endIndex)))
+            }
+        }
+        return weeks
+    }
+
+    /**
+     * HU-08 Criterio de aceptación:
+     * Al elegir una semana se muestran sus categorías con horas y porcentaje sobre 168 horas.
+     */
+    fun getReportItemsForWeek(weekStart: String): List<WeeklyReportItem> {
+        val items = mutableListOf<WeeklyReportItem>()
+        val db = readableDatabase
+        val query = """
+            SELECT wr.$COL_REPORT_ID, wr.$COL_REPORT_WEEK_START, wr.$COL_REPORT_WEEK_END,
+                   wr.$COL_REPORT_CATEGORY_ID, wr.$COL_REPORT_TOTAL_SECONDS, wr.$COL_REPORT_HOURS,
+                   wr.$COL_REPORT_PERCENTAGE, c.$COL_CAT_NAME AS cat_name, c.$COL_CAT_COLOR AS cat_color
+            FROM $TABLE_WEEKLY_REPORTS wr
+            INNER JOIN $TABLE_CATEGORIES c ON wr.$COL_REPORT_CATEGORY_ID = c.$COL_CAT_ID
+            WHERE wr.$COL_REPORT_WEEK_START = ?
+            ORDER BY c.$COL_CAT_NAME ASC
+        """.trimIndent()
+
+        val cursor = db.rawQuery(query, arrayOf(weekStart))
+        cursor.use {
+            val idIndex = it.getColumnIndexOrThrow(COL_REPORT_ID)
+            val startIndex = it.getColumnIndexOrThrow(COL_REPORT_WEEK_START)
+            val endIndex = it.getColumnIndexOrThrow(COL_REPORT_WEEK_END)
+            val catIdIndex = it.getColumnIndexOrThrow(COL_REPORT_CATEGORY_ID)
+            val secondsIndex = it.getColumnIndexOrThrow(COL_REPORT_TOTAL_SECONDS)
+            val hoursIndex = it.getColumnIndexOrThrow(COL_REPORT_HOURS)
+            val percentIndex = it.getColumnIndexOrThrow(COL_REPORT_PERCENTAGE)
+            val catNameIndex = it.getColumnIndexOrThrow("cat_name")
+            val catColorIndex = it.getColumnIndexOrThrow("cat_color")
+
+            while (it.moveToNext()) {
+                items.add(
+                    WeeklyReportItem(
+                        id = it.getLong(idIndex),
+                        weekStart = it.getString(startIndex),
+                        weekEnd = it.getString(endIndex),
+                        categoryId = it.getLong(catIdIndex),
+                        categoryName = it.getString(catNameIndex),
+                        categoryColorHex = it.getString(catColorIndex),
+                        totalSeconds = it.getLong(secondsIndex),
+                        hours = it.getDouble(hoursIndex),
+                        percentage = it.getDouble(percentIndex)
+                    )
+                )
+            }
+        }
+        return items
+    }
+
+    /**
+     * HU-08 Criterio de aceptación:
+     * Debajo se muestra la lista de eventos de esa semana con tarea, categoría, inicio, fin y duración.
+     */
+    fun getEventsForWeek(weekStartDateTime: String, weekEndDateTime: String): List<Event> {
+        val events = mutableListOf<Event>()
+        val db = readableDatabase
+        val query = """
+            SELECT e.$COL_EVENT_ID, e.$COL_EVENT_TASK_ID, e.$COL_EVENT_START_TIME, e.$COL_EVENT_END_TIME,
+                   e.$COL_EVENT_DURATION, e.$COL_EVENT_IS_ACTIVE,
+                   t.$COL_TASK_NAME AS task_name, c.$COL_CAT_NAME AS cat_name, c.$COL_CAT_COLOR AS cat_color
+            FROM $TABLE_EVENTS e
+            INNER JOIN $TABLE_TASKS t ON e.$COL_EVENT_TASK_ID = t.$COL_TASK_ID
+            INNER JOIN $TABLE_CATEGORIES c ON t.$COL_TASK_CATEGORY_ID = c.$COL_CAT_ID
+            WHERE e.$COL_EVENT_IS_ACTIVE = 0
+              AND e.$COL_EVENT_START_TIME >= ?
+              AND e.$COL_EVENT_START_TIME <= ?
+            ORDER BY e.$COL_EVENT_START_TIME DESC
+        """.trimIndent()
+
+        val cursor = db.rawQuery(query, arrayOf(weekStartDateTime, weekEndDateTime))
+        cursor.use {
+            val idIndex = it.getColumnIndexOrThrow(COL_EVENT_ID)
+            val taskIdIndex = it.getColumnIndexOrThrow(COL_EVENT_TASK_ID)
+            val startTimeIndex = it.getColumnIndexOrThrow(COL_EVENT_START_TIME)
+            val endTimeIndex = it.getColumnIndexOrThrow(COL_EVENT_END_TIME)
+            val durationIndex = it.getColumnIndexOrThrow(COL_EVENT_DURATION)
+            val activeIndex = it.getColumnIndexOrThrow(COL_EVENT_IS_ACTIVE)
+            val taskNameIndex = it.getColumnIndexOrThrow("task_name")
+            val catNameIndex = it.getColumnIndexOrThrow("cat_name")
+            val catColorIndex = it.getColumnIndexOrThrow("cat_color")
+
+            while (it.moveToNext()) {
+                events.add(
+                    Event(
+                        id = it.getLong(idIndex),
+                        taskId = it.getLong(taskIdIndex),
+                        startTime = it.getString(startTimeIndex),
+                        endTime = it.getString(endTimeIndex),
+                        durationSeconds = it.getLong(durationIndex),
+                        isActive = it.getInt(activeIndex) == 1,
+                        taskName = it.getString(taskNameIndex),
+                        categoryName = it.getString(catNameIndex),
+                        categoryColorHex = it.getString(catColorIndex)
+                    )
+                )
+            }
+        }
+        return events
+    }
 }
+
 
